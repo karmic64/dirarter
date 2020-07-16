@@ -4,6 +4,42 @@
 #include <string.h>
 #include <ctype.h>
 
+int stoi(char* s)
+{
+    int hex = 0;
+    if (s[0] == '0' && s[1] == 'x')
+    {
+        hex++;
+        s += 2;
+    }
+    else if (s[0] == '$')
+    {
+        hex++;
+        s++;
+    }
+    int conv = 0;
+    int place = 1;
+    for (char *p = s+strlen(s)-1; p >= s; p--)
+    {
+        char c = tolower(*p);
+        if (c >= '0' && c <= '9')
+        {
+            conv += (c - '0') * place;
+            goto good_char;
+        }
+        if (hex && (c >= 'a' && c <= 'f'))
+        {
+            conv += (c - 'a' + 0x0a) * place;
+            goto good_char;
+        }
+        return -1;
+good_char:      
+        place *= hex ? 0x10 : 10;
+    }
+    return conv;
+}
+
+
 #define T18_OFFS 0x16500
 
 uint8_t *disk;
@@ -96,7 +132,11 @@ int main(int argc, char* argv[])
     size_t artlen = 0;
     
     FILE *f = fopen(srcname, srcbin ? "rb" : "r");
-    if (!f) err("Couldn't open source file");
+    if (!f)
+    {
+        perror("Couldn't open source file");
+        exit(EXIT_FAILURE);
+    }
     fseek(f, 0, SEEK_END);
     size_t fsize = ftell(f);
     rewind(f);
@@ -116,41 +156,12 @@ int main(int argc, char* argv[])
         char *tok = strtok(fbuf, " ,\n");
         while (tok)
         {
-            int hex = 0;
-            if (tok[0] == '0' && tok[1] == 'x')
-            {
-                hex++;
-                tok += 2;
-            }
-            else if (tok[0] == '$')
-            {
-                hex++;
-                tok++;
-            }
-            int conv = 0;
-            int place = 1;
-            for (char *p = tok+strlen(tok)-1; p >= tok; p--)
-            {
-                char c = tolower(*p);
-                if (c >= '0' && c <= '9')
-                {
-                    conv += (c - '0') * place;
-                    goto good_char;
-                }
-                if (hex && (c >= 'a' && c <= 'f'))
-                {
-                    conv += (c - 'a' + 0x0a) * place;
-                    goto good_char;
-                }
-                goto bad_tok;
-good_char:      place *= hex ? 0x10 : 10;
-            }
-            if (conv >= 0 && conv < 256)
+            int i = stoi(tok);
+            if (i >= 0 && i < 256)
             {
                 art = realloc(art, artlen+1);
-                art[artlen++] = conv;
+                art[artlen++] = i;
             }
-bad_tok:
             tok = strtok(NULL, " ,\n");
         }
         
@@ -168,29 +179,37 @@ bad_tok:
         uint8_t c = art[i];
         if (!srcpet)
         {
+            if (c == 0x8d || c == 0xcd || c == 0x60 ||
+                (c >= 0xa0 && c < 0xc0) ||
+                (c >= 0xe0) )
+            {
+                printf("Art contains illegal screencode $%02x in filename %i, char %i\n", c, i/16+1, i%16+1);
+                exit(EXIT_FAILURE);
+            }
             if (c < 0x20) c += 0x40;
             else if (c < 0x40)  /* nothing */ ;
             else if (c == 0x5e) c = 0xff;
             else if (c < 0x60) c += 0x80;
             else if (c < 0x80) c += 0x40;
             else if (c < 0xa0) c += 0x80;
-            else if (c < 0xc0) err("Art contains illegal screencode in $a0-$bf");
             else if (c < 0xe0) c += 0xc0;
-            else err("Art contains illegal screencode in $e0-$ff");
             
             art[i] = c;
         }
-        if (c == 0x0d)
-            err("Art contains illegal petscii code $0D");
-        if (c == 0x8d)
-            err("Art contains illegal petscii code $8D");
-        if (c == 0xa0)
-            err("Art contains illegal petscii code $A0");
+        if (c == 0x0d || c == 0x8d || c == 0xa0)
+        {
+            printf("Art contains illegal petscii code $%02x in filename %i, char %i\n", c, i/16+1, i%16+1);
+            exit(EXIT_FAILURE);
+        }
     }
     
     
     f = fopen(diskname, "rb");
-    if (!f) err("Couldn't open disk file");
+    if (!f) 
+    {
+        perror("Couldn't open disk file");
+        exit(EXIT_FAILURE);
+    }
     fseek(f, 0, SEEK_END);
     fsize = ftell(f);
     if (fsize != 174848 && fsize != 175531 && fsize != 176608 && fsize != 197376)
@@ -223,7 +242,7 @@ bad_tok:
             {
                 if (file[0] != 18 || file[1] >= 19)
                 {
-                    printf("Invalid T/S link to %i/%i\n", file[0], file[1]);
+                    printf("Directory contains invalid T/S link to %i/%i\n", file[0], file[1]);
                     exit(EXIT_FAILURE);
                 }
                 sector = file[1];
