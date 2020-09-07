@@ -131,7 +131,7 @@ int main(int argc, char* argv[])
     uint8_t *art = NULL;
     size_t artlen = 0;
     
-    FILE *f = fopen(srcname, srcbin ? "rb" : "r");
+    FILE *f = fopen(srcname, "rb");
     if (!f)
     {
         perror("Couldn't open source file");
@@ -139,8 +139,8 @@ int main(int argc, char* argv[])
     }
     fseek(f, 0, SEEK_END);
     size_t fsize = ftell(f);
-    rewind(f);
     char *fbuf = malloc(fsize+1);
+    rewind(f);
     fread(fbuf, 1, fsize, f);
     fclose(f);
     
@@ -152,8 +152,8 @@ int main(int argc, char* argv[])
     }
     else
     {
-        fbuf[fsize] = 0;
-        char *tok = strtok(fbuf, " ,\n");
+        fbuf[fsize] = '\0';
+        char *tok = strtok(fbuf, " ,\n\f\r\t\v");
         while (tok)
         {
             int i = stoi(tok);
@@ -162,7 +162,7 @@ int main(int argc, char* argv[])
                 art = realloc(art, artlen+1);
                 art[artlen++] = i;
             }
-            tok = strtok(NULL, " ,\n");
+            tok = strtok(NULL, " ,\n\f\r\t\v");
         }
         
     }
