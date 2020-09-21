@@ -174,6 +174,7 @@ int main(int argc, char* argv[])
     if (artlen % 0x10)
         err("Art length must be a multiple of 16");
     
+    int illegal = 0;
     for (int i = 0; i < artlen; i++)
     {
         uint8_t c = art[i];
@@ -184,7 +185,7 @@ int main(int argc, char* argv[])
                 (c >= 0xe0) )
             {
                 printf("Art contains illegal screencode $%02x in filename %i, char %i\n", c, i/16+1, i%16+1);
-                exit(EXIT_FAILURE);
+                illegal++;
             }
             if (c < 0x20) c += 0x40;
             else if (c < 0x40)  /* nothing */ ;
@@ -199,9 +200,10 @@ int main(int argc, char* argv[])
         if (c == 0x0d || c == 0x8d || c == 0xa0)
         {
             printf("Art contains illegal petscii code $%02x in filename %i, char %i\n", c, i/16+1, i%16+1);
-            exit(EXIT_FAILURE);
+            illegal++;
         }
     }
+    if (illegal) exit(EXIT_FAILURE);
     
     
     f = fopen(diskname, "rb");
