@@ -180,7 +180,7 @@ int main(int argc, char* argv[])
         uint8_t c = art[i];
         if (!srcpet)
         {
-            if (c == 0x8d || c == 0xcd || c == 0x60 ||
+            if (c == 0x80 || c == 0x8d || c == 0x94 || c == 0xcd || c == 0x60 ||
                 (c >= 0xa0 && c < 0xc0) ||
                 (c >= 0xe0) )
             {
@@ -197,7 +197,7 @@ int main(int argc, char* argv[])
             
             art[i] = c;
         }
-        if (c == 0x0d || c == 0x8d || c == 0xa0)
+        if (c == 0x00 || c == 0x0d || c == 0x14 || c == 0x8d || c == 0xa0)
         {
             printf("Art contains illegal petscii code $%02x in filename %i, char %i\n", c, i/16+1, i%16+1);
             illegal++;

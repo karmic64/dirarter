@@ -10,7 +10,9 @@ The characters in a source file can be encoded as either screen codes or PETSCII
 
 * Screen codes `$A0`-`$BF` - no petscii equivalent
 * Screen codes `$E0`-`$FF` - no petscii equivalent
+* Screen code `$80`, PETSCII code `$00`
 * Screen code `$8D`, PETSCII code `$0D` - newline
+* Screen code `$94`, PETSCII code `$14` - DEL
 * Screen code `$CD`, PETSCII code `$8D` - line feed
 * Screen code `$60`, PETSCII code `$A0` - used in the disk to mark end of filename
 
