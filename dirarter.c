@@ -197,7 +197,7 @@ int main(int argc, char* argv[])
             
             art[i] = c;
         }
-        if (c == 0x00 || c == 0x0d || c == 0x14 || c == 0x8d || c == 0xa0)
+        else if (c == 0x00 || c == 0x0d || c == 0x14 || c == 0x8d || c == 0xa0)
         {
             printf("Art contains illegal petscii code $%02x in filename %i, char %i\n", c, i/16+1, i%16+1);
             illegal++;
